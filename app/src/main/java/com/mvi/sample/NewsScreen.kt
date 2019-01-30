@@ -1,7 +1,6 @@
 package com.mvi.sample
 
-import android.view.View.GONE
-import android.view.View.VISIBLE
+import android.view.LayoutInflater
 import com.mvi.core.Action
 import com.mvi.core.Component
 import com.mvi.core.State
@@ -10,6 +9,7 @@ import com.mvi.support.MviFragment
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.fragment_news.*
+import kotlinx.android.synthetic.main.item_article.view.*
 
 sealed class NewsAction : Action {
     object InitialLoadAction : NewsAction()
@@ -22,8 +22,8 @@ sealed class NewsAction : Action {
 sealed class NewsState : State {
     object InitialState : NewsState()
     object LoadingState : NewsState()
-    class NewsLoadedState(private val headLine: TopHeadLines) : NewsState()
-    class NewsFailureState(private val throwable: Throwable) : NewsState()
+    class NewsLoadedState(val result: TopHeadLines) : NewsState()
+    class NewsFailureState(val throwable: Throwable) : NewsState()
 }
 
 
@@ -37,22 +37,23 @@ class NewsFragment : MviFragment<NewsAction, NewsState>() {
     override fun render(state: NewsState) {
         return when (state) {
             InitialState -> {
-                progress.visibility = GONE
-                stateName.text = state.javaClass.simpleName
+                progress.gone()
             }
             NewsState.LoadingState -> {
-                progress.visibility = VISIBLE
-                stateName.visibility = GONE
+                progress.visible()
             }
             is NewsState.NewsLoadedState -> {
-                progress.visibility = GONE
-                stateName.text = state.javaClass.simpleName
-                stateName.visibility = VISIBLE
+                state.result.articles.forEach {
+                    LayoutInflater.from(context).inflate(R.layout.item_article, articlesContainer, false)
+                        .apply { desc.text = it.description }
+                        .also(articlesContainer::addView)
+                }
+                progress.gone()
+                retry.gone()
             }
             is NewsState.NewsFailureState -> {
-                progress.visibility = GONE
-                stateName.text = state.javaClass.simpleName
-                stateName.visibility = VISIBLE
+                progress.gone()
+                retry.visible()
             }
         }
     }

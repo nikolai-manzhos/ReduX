@@ -6,14 +6,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 data class TopHeadLines(
-    private val totalResults: Int,
-    private val articles: List<Article>
+    val totalResults: Int,
+    val articles: List<Article>
 )
 
 data class Article(
-    private val title: String,
-    private val description: String,
-    private val image: String
+    val title: String,
+    val description: String,
+    val image: String
 )
 
 private const val API_KEY = "2295b5681975488c8867850936bff3c2"

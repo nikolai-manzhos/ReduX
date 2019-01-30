@@ -14,7 +14,7 @@ class NewsReducer : Reducer<NewsAction, NewsState> {
             is NewsLoadingAction -> NewsState.LoadingState
             is NewsSuccessAction -> NewsState.NewsLoadedState(action.headLines)
             is NewsFailureAction -> NewsState.NewsFailureState(action.exception)
-            else -> throw IllegalArgumentException("Unsupported action: ${action.javaClass.simpleName}")
+            else -> state
         }
     }
 }

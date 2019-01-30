@@ -10,7 +10,6 @@ import io.reactivex.rxkotlin.plusAssign
 import io.reactivex.rxkotlin.withLatestFrom
 
 interface Action
-interface InternalAction // TODO: do we really need this?
 interface State
 
 interface MviView<A : Action, in S : State> {
