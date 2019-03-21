@@ -2,6 +2,7 @@ package com.mvi.sample
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import com.mvi.sample.news.NewsFragment
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

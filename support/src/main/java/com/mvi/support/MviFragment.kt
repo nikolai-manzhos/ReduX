@@ -8,8 +8,9 @@ import android.view.View
 import android.view.ViewGroup
 import com.mvi.core.Action
 import com.mvi.core.Component
-import com.mvi.core.MviView
 import com.mvi.core.State
+import com.mvi.core.api.MviView
+import com.mvi.core.api.Navigator
 import io.reactivex.disposables.Disposable
 import java.util.*
 import kotlin.LazyThreadSafetyMode.NONE
@@ -21,12 +22,12 @@ abstract class MviFragment<A : Action, S : State> : Fragment(), MviView<A, S> {
     private var connectionDisposable: Disposable? = null
     private var bindingDisposable: Disposable? = null
 
-    // TODO find a better way to generate unique component id
     private var componentTag = UUID.randomUUID().toString()
     private val component: Component<A, S> by lazy(NONE) {
         val cachedComponent: Component<A, S>? = ComponentStore.retrieve(componentTag)
         return@lazy cachedComponent ?: provideComponent().also { ComponentStore.store(componentTag, it) }
     }
+    private val navigator: Navigator<A>? by lazy(NONE) { provideNavigator() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         initComponent(savedInstanceState)
@@ -44,7 +45,7 @@ abstract class MviFragment<A : Action, S : State> : Fragment(), MviView<A, S> {
 
     override fun onResume() {
         super.onResume()
-        bindingDisposable = component.bind(this)
+        bindingDisposable = component.bind(this, navigator)
     }
 
     override fun onPause() {
@@ -61,12 +62,11 @@ abstract class MviFragment<A : Action, S : State> : Fragment(), MviView<A, S> {
         }
     }
 
-    abstract fun provideComponent(): Component<A, S>
     @LayoutRes abstract fun provideLayoutId(): Int
+    override fun provideNavigator(): Navigator<A>? = null
 
     private fun initComponent(savedState: Bundle?) {
         savedState?.apply { componentTag = getString(EXTRA_COMPONENT_ID)!! }
         connectionDisposable = component.connect()
     }
-
 }

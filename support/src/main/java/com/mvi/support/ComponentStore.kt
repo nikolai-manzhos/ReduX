@@ -11,5 +11,7 @@ internal object ComponentStore {
 
     fun clear(tag: String) = cache.remove(tag)
 
-    fun <A : Action, S : State> retrieve(tag: String): Component<A, S>? = cache[tag] as? Component<A, S>?
+    @Suppress("UNCHECKED_CAST") fun <A : Action, S : State> retrieve(tag: String): Component<A, S>? {
+        return cache[tag] as? Component<A, S>?
+    }
 }

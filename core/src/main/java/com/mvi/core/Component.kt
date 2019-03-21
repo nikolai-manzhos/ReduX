@@ -2,6 +2,10 @@ package com.mvi.core
 
 import com.jakewharton.rxrelay2.BehaviorRelay
 import com.jakewharton.rxrelay2.PublishRelay
+import com.mvi.core.api.Middleware
+import com.mvi.core.api.MviView
+import com.mvi.core.api.Navigator
+import com.mvi.core.api.Reducer
 import io.reactivex.Observable
 import io.reactivex.Scheduler
 import io.reactivex.disposables.CompositeDisposable
@@ -12,20 +16,7 @@ import io.reactivex.rxkotlin.withLatestFrom
 interface Action
 interface State
 
-interface MviView<A : Action, in S : State> {
-    val actions: Observable<A>
-    fun render(state: S)
-}
-
-interface Reducer<A : Action, S : State> {
-    fun reduce(action: A, state: S): S
-}
-
-interface Middleware<A : Action, S : State> {
-    fun intercept(actions: Observable<A>, state: Observable<S>): Observable<A>
-}
-
-class Component<A : Action, out S : State>(
+class Component<A : Action, S : State>(
     private val reducer: Reducer<A, S>,
     private val middlewares: Collection<Middleware<A, S>>,
     private val uiScheduler: Scheduler,
@@ -47,13 +38,17 @@ class Component<A : Action, out S : State>(
         return disposable
     }
 
-    fun bind(view: MviView<A, S>): Disposable {
+    fun bind(view: MviView<A, S>, navigator: Navigator<A>?): Disposable {
         val disposable = CompositeDisposable()
         disposable += state
             .observeOn(uiScheduler)
             .subscribe(view::render)
 
         disposable += view.actions.subscribe(actions::accept)
+        if (navigator != null) {
+            disposable += actions.subscribe(navigator::navigate)
+        }
+
         return disposable
     }
 }

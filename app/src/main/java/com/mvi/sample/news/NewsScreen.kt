@@ -1,10 +1,13 @@
-package com.mvi.sample
+package com.mvi.sample.news
 
 import android.view.LayoutInflater
+import com.jakewharton.rxrelay2.PublishRelay
 import com.mvi.core.Action
 import com.mvi.core.Component
 import com.mvi.core.State
-import com.mvi.sample.NewsState.InitialState
+import com.mvi.core.api.Navigator
+import com.mvi.sample.*
+import com.mvi.sample.news.NewsState.InitialState
 import com.mvi.support.MviFragment
 import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
@@ -17,6 +20,8 @@ sealed class NewsAction : Action {
     class NewsSuccessAction(val headLines: TopHeadLines) : NewsAction()
     class NewsFailureAction(val exception: Throwable) : NewsAction()
     object NewsLoadingAction : NewsAction()
+
+    object ArticleClickAction : NewsAction()
 }
 
 sealed class NewsState : State {
@@ -28,11 +33,11 @@ sealed class NewsState : State {
 
 
 class NewsFragment : MviFragment<NewsAction, NewsState>() {
-    override fun provideComponent(): Component<NewsAction, NewsState> =
-        Component(NewsReducer(), Injection.provideNewsMiddleware(), AndroidSchedulers.mainThread(), InitialState)
 
-    override val actions: Observable<NewsAction> = Observable.just(NewsAction.InitialLoadAction)
-    override fun provideLayoutId(): Int = R.layout.fragment_news
+    // Clicks
+    private val clickActions = PublishRelay.create<NewsAction>()
+    override val actions: Observable<NewsAction> =
+        Observable.merge(Observable.just(NewsAction.InitialLoadAction), clickActions)
 
     override fun render(state: NewsState) {
         return when (state) {
@@ -43,10 +48,13 @@ class NewsFragment : MviFragment<NewsAction, NewsState>() {
                 progress.visible()
             }
             is NewsState.NewsLoadedState -> {
-                state.result.articles.forEach {
+                state.result.articles.forEach { article ->
                     LayoutInflater.from(context).inflate(R.layout.item_article, articlesContainer, false)
-                        .apply { desc.text = it.description }
+                        .apply { desc.text = article.description }
                         .also(articlesContainer::addView)
+                        .apply {
+                            setOnClickListener { clickActions.accept(NewsAction.ArticleClickAction) }
+                        }
                 }
                 progress.gone()
                 retry.gone()
@@ -58,4 +66,13 @@ class NewsFragment : MviFragment<NewsAction, NewsState>() {
         }
     }
 
+    override fun provideComponent(): Component<NewsAction, NewsState> =
+        Component(
+            NewsReducer(),
+            Injection.provideNewsMiddleware(),
+            AndroidSchedulers.mainThread(),
+            InitialState
+        )
+    override fun provideNavigator(): Navigator<NewsAction> = NewsNavigator(requireActivity())
+    override fun provideLayoutId(): Int = R.layout.fragment_news
 }
