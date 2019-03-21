@@ -48,10 +48,3 @@ class NewsMiddleware(private val api: Api) : Middleware<NewsAction, NewsState> {
             }.onErrorReturn(::NewsFailureAction)
     }
 }
-
-class NewsNavigatorMiddleware : Middleware<NewsAction, NewsState> {
-    override fun intercept(actions: Observable<NewsAction>, state: Observable<NewsState>): Observable<NewsAction> {
-        return actions.ofType(NewsAction.ArticleClickAction.javaClass)
-            .switchMap<NewsAction> { Observable.empty() }
-    }
-}
